@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import pandas as pd
+import os
 
 def create_football_field(linenumbers=True,
                           endzones=True,
@@ -76,5 +78,19 @@ def create_football_field(linenumbers=True,
                  color='blue')
     return fig, ax
 
-create_football_field()
-plt.show()
+def get_positions_from_players_in_game(data_path, player_name, gameId):
+    """
+        Returns dataframe with all x and y positions of the given
+        in the given game.
+    """
+    for i in range(1,10):
+        tracking_df = pd.read_csv(os.path.join(data_path, "tracking_week_"+str(i)+".csv"))
+        gameIds = tracking_df["gameId"].unique()
+        if gameId in gameIds: # check if the wanted game is in this week's games
+            players = tracking_df[(tracking_df["gameId"]==gameId)]["displayName"].unique()
+            if player_name in players:
+                player_tracks = tracking_df[(tracking_df["gameId"]==gameId) & (tracking_df["displayName"]==player_name)]
+                return player_tracks[["playId","x","y"]]
+            else:
+                raise IndexError("Player " +str(player_name)+" not found in game "+str(gameId))
+    raise IndexError("Game with gameId: "+str(gameId)+" not found")
