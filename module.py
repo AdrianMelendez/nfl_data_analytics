@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import pandas as pd
+import numpy as np
 import os
 
 def create_football_field(linenumbers=True,
@@ -15,7 +16,8 @@ def create_football_field(linenumbers=True,
     Allows for showing or hiding endzones.
     """
     rect = patches.Rectangle((0, 0), 120, 53.3, linewidth=0.1,
-                             edgecolor='r', facecolor='white', zorder=0)
+                             edgecolor='r', facecolor='lime', zorder=0)
+
 
     fig, ax = plt.subplots(1, figsize=figsize)
     ax.add_patch(rect)
@@ -33,13 +35,13 @@ def create_football_field(linenumbers=True,
         ez1 = patches.Rectangle((0, 0), 10, 53.3,
                                 linewidth=0.1,
                                 edgecolor='r',
-                                facecolor='blue',
+                                facecolor='black',
                                 alpha=0.2,
                                 zorder=0)
         ez2 = patches.Rectangle((110, 0), 120, 53.3,
                                 linewidth=0.1,
                                 edgecolor='r',
-                                facecolor='blue',
+                                facecolor='black',
                                 alpha=0.2,
                                 zorder=0)
         ax.add_patch(ez1)
@@ -78,7 +80,7 @@ def create_football_field(linenumbers=True,
                  color='blue')
     return fig, ax
 
-def get_positions_from_players_in_game(data_path, player_name, gameId):
+def get_positions_from_player_in_game(data_path, player_name, gameId):
     """
         Returns dataframe with all x and y positions of the given
         in the given game.
@@ -94,3 +96,29 @@ def get_positions_from_players_in_game(data_path, player_name, gameId):
             else:
                 raise IndexError("Player " +str(player_name)+" not found in game "+str(gameId))
     raise IndexError("Game with gameId: "+str(gameId)+" not found")
+
+def obtain_gameId(data_path, homeTeam, visitorTeam):
+    games_df = pd.read_csv(os.path.join(data_path, "games.csv"))
+    try:
+        res = games_df[(games_df['homeTeamAbbr'] == homeTeam) & (games_df['visitorTeamAbbr'] == visitorTeam)].gameId.values[0]
+    except IndexError:
+        return -1
+    return res
+
+def draw_positions_from_player_in_game(data_path, player_name, homeTeam, visitorTeam):
+    gameId = obtain_gameId(data_path, homeTeam, visitorTeam)
+    all_positions = get_positions_from_player_in_game(data_path, player_name, gameId)
+    x_marks = np.arange(0,120,0.1)
+    y_marks = np.arange(0,53.3,0.1)
+    field_matrix = np.zeros((len(x_marks), len(y_marks)))
+    for _, position in all_positions.iterrows():
+        try:
+            field_matrix[int(np.floor(position["x"]*10)),int(np.floor(position["y"]*10))] += 1
+        except IndexError:
+            continue
+    field_matrix = field_matrix/field_matrix.sum()
+    fig, ax = create_football_field()
+    fig.set_facecolor('None')
+    ax.imshow(field_matrix.T, cmap="summer", origin="lower", extent=[-0.1,119.9,-0.1,53,2], alpha=.5, vmax=1e-10)
+    fig.suptitle(player_name +' in game ' +visitorTeam + '@ '+homeTeam, fontsize=20, color='white')
+    return fig
