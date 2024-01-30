@@ -4,14 +4,17 @@ import numpy as np
 import module
 import matplotlib.pyplot as plt
 
+st.set_page_config(
+    page_title="Draw paths",
+    page_icon="🏈",
+)
+
 """
-# NFL Data Analytics
+    # Draw a player path
 
-### Path of any player in any game
-
+    In this page you can select a game by choosing the home and visitor team and draw all the paths done
+    by any given player in that game.
 """
-
-# Add a selectbox to the sidebar:
 
 data_path = "data/"
 
