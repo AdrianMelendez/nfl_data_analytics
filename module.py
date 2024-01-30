@@ -97,10 +97,10 @@ def get_positions_from_player_in_game(data_path, player_name, gameId):
                 raise IndexError("Player " +str(player_name)+" not found in game "+str(gameId))
     raise IndexError("Game with gameId: "+str(gameId)+" not found")
 
-def obtain_gameId(data_path, homeTeam, visitorTeam):
+def obtain_gameId(data_path, home_team, visitor_team):
     games_df = pd.read_csv(os.path.join(data_path, "games.csv"))
     try:
-        res = games_df[(games_df['homeTeamAbbr'] == homeTeam) & (games_df['visitorTeamAbbr'] == visitorTeam)].gameId.values[0]
+        res = games_df[(games_df['homeTeamAbbr'] == home_team) & (games_df['visitorTeamAbbr'] == visitor_team)].gameId.values[0]
     except IndexError:
         return -1
     return res
@@ -108,17 +108,40 @@ def obtain_gameId(data_path, homeTeam, visitorTeam):
 def draw_positions_from_player_in_game(data_path, player_name, homeTeam, visitorTeam):
     gameId = obtain_gameId(data_path, homeTeam, visitorTeam)
     all_positions = get_positions_from_player_in_game(data_path, player_name, gameId)
-    x_marks = np.arange(0,120,0.1)
-    y_marks = np.arange(0,53.3,0.1)
+    x_marks = np.arange(0,120,.5)
+    y_marks = np.arange(0,53.3,.5)
     field_matrix = np.zeros((len(x_marks), len(y_marks)))
     for _, position in all_positions.iterrows():
         try:
-            field_matrix[int(np.floor(position["x"]*10)),int(np.floor(position["y"]*10))] += 1
+            field_matrix[int(np.floor(position["x"]*2)),int(np.floor(position["y"]*2))] += 1
         except IndexError:
             continue
     field_matrix = field_matrix/field_matrix.sum()
     fig, ax = create_football_field()
     fig.set_facecolor('None')
     ax.imshow(field_matrix.T, cmap="summer", origin="lower", extent=[-0.1,119.9,-0.1,53,2], alpha=.5, vmax=1e-10)
-    fig.suptitle(player_name +' in game ' +visitorTeam + '@ '+homeTeam, fontsize=20, color='white')
+    fig.suptitle(player_name +' in game ' +visitorTeam + ' @ '+homeTeam, fontsize=20, color='white')
     return fig
+
+def get_all_home_teams(data_path):
+    games_df = pd.read_csv(os.path.join(data_path, "games.csv"))
+    return games_df["homeTeamAbbr"].unique().tolist()
+
+def get_all_away_teams_given_home_team(data_path, home_team):
+    games_df = pd.read_csv(os.path.join(data_path, "games.csv"))
+    return games_df[games_df["homeTeamAbbr"]==home_team]["visitorTeamAbbr"].unique().tolist()
+
+def get_all_player_names_given_game(data_path, home_team, visitor_team):
+    gameId = obtain_gameId(data_path, home_team, visitor_team)
+    for i in range(1,10):
+        tracking_df = pd.read_csv(os.path.join(data_path, "tracking_week_"+str(i)+".csv"))
+        gameIds = tracking_df["gameId"].unique()
+        if gameId in gameIds: # check if the wanted game is in this week's games
+            players_ids = tracking_df[(tracking_df["gameId"]==gameId)]["nflId"].dropna().unique() # the football will return nan, we drop it
+            break
+    players_ls = []
+    players_df = pd.read_csv(os.path.join(data_path, 'players.csv'))
+    for id in players_ids:
+        player_details = players_df[players_df['nflId']==id][['displayName', 'position']]
+        players_ls.append(player_details['displayName'].values[0] + ' ('+player_details['position'].values[0]+')')
+    return players_ls
