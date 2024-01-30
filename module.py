@@ -120,7 +120,6 @@ def draw_positions_from_player_in_game(data_path, player_name, homeTeam, visitor
     fig, ax = create_football_field()
     fig.set_facecolor('None')
     ax.imshow(field_matrix.T, cmap="summer", origin="lower", extent=[-0.1,119.9,-0.1,53,2], alpha=.5, vmax=1e-10)
-    fig.suptitle(player_name +' in game ' +visitorTeam + ' @ '+homeTeam, fontsize=20, color='white')
     return fig
 
 def get_all_home_teams(data_path):
@@ -145,3 +144,19 @@ def get_all_player_names_given_game(data_path, home_team, visitor_team):
         player_details = players_df[players_df['nflId']==id][['displayName', 'position']]
         players_ls.append(player_details['displayName'].values[0] + ' ('+player_details['position'].values[0]+')')
     return players_ls
+
+def get_offensive_epa_run(plays_df, team):
+    plays = plays_df[plays_df['possessionTeam']==team].dropna(subset=["expectedPointsAdded"])
+    epa_run, count_run, epa_des_run, count_des_run, epa_scramble, count_scramble = 0, 0, 0, 0, 0, 0
+    for _, play in plays.iterrows():
+        pass_result = play['passResult']
+        epa = play['expectedPointsAdded']
+        if pass_result=='R':
+            epa_scramble += epa
+            count_scramble +=1
+        if pass_result!=pass_result:
+            epa_des_run += epa
+            count_des_run +=1
+        epa_run += epa
+        count_run +=1
+    return epa_run/count_run, epa_des_run/count_des_run, epa_scramble/count_scramble
