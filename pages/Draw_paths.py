@@ -40,4 +40,6 @@ player_name = player_name.rsplit(' ', 1)[0] # to delete position from the string
 
 data_path = "data/"
 fig = module.draw_positions_from_player_in_game(data_path, player_name, home_team, visitor_team)
+str = (player_name +' in game ' +visitor_team + ' @ '+home_team)
+st.markdown(f"<h3 style='text-align: center; color: grey;'>{str}</h3>", unsafe_allow_html=True)
 fig
